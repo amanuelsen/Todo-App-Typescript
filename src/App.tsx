@@ -1,36 +1,74 @@
-import React, { useState } from 'react';
-import './App.css';
-import { type } from 'os';
-import Inputfileds from './components/Inputfileds';
-import { Todo } from './components/modele';
-import Todolist from './components/Todolist';
+import React, { useState } from "react";
+import "./App.css";
+import InputField from "./components/Inputfileds";
+import TodoList from "./components/Todolist";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { Todo } from "./components/modele";
+const App: React.FC = () => {
+  const [todo, setTodo] = useState<string>("");
+  const [todos, setTodos] = useState<Array<Todo>>([]);
+  const [CompletedTodos, setCompletedTodos] = useState<Array<Todo>>([]);
 
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
 
-const App:React.FC =()=> {
-  const [todo, settodo]=useState<string>("")
-  const [todos, settodos]=useState<Todo[]>([])
-
-  const handleadd=(e:React.FormEvent)=>{
-e.preventDefault()
-if(todo) {
-  settodos([...todos, {id:Date.now(), todo, isDone:false} ])
-  settodo("")
-}
-
+    if (todo) {
+      setTodos([...todos, { id: Date.now(), todo, isDone: false }]);
+      setTodo("");
+    }
   };
 
- console.log(todos)
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source } = result;
+
+
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    let add;
+    let active = todos;
+    let complete = CompletedTodos;
+    
+    if (source.droppableId === "TodosList") {
+      add = active[source.index];
+      active.splice(source.index, 1);
+    } else {
+      add = complete[source.index];
+      complete.splice(source.index, 1);
+    }
+
+    if (destination.droppableId === "TodosList") {
+      active.splice(destination.index, 0, add);
+    } else {
+      complete.splice(destination.index, 0, add);
+    }
+
+    setCompletedTodos(complete);
+    setTodos(active);
+  };
+
   return (
-    <div className="App">
-      <span className='heading'>   Todo app 
-</span>
-<Inputfileds todo={todo} settodo={settodo} handleadd={handleadd}/>
-<Todolist todos={todos} settodos={settodos}/>
-
-
-
-    </div>
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className="App">
+        <span className="heading">Todo App</span>
+        <InputField todo={todo} setTodo={setTodo} handleAdd={handleAdd} />
+        <TodoList
+          todos={todos}
+          setTodos={setTodos}
+          CompletedTodos={CompletedTodos}
+          setCompletedTodos={setCompletedTodos}
+        />
+      </div>
+    </DragDropContext>
   );
-}
+};
 
 export default App;
